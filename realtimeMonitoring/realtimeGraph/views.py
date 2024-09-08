@@ -426,7 +426,10 @@ class RemaView(TemplateView):
         measurements = Measurement.objects.all()
 
         if measureParam != None:
-            selectedMeasure = Measurement.objects.filter(name=measureParam)[0]
+            if measureParam == 'all':  # new
+                selectedMeasure = 'all' # new
+            else: # new
+                selectedMeasure = Measurement.objects.filter(name=measureParam)[0]
         elif measurements.count() > 0:
             selectedMeasure = measurements[0]
 
@@ -455,27 +458,55 @@ class RemaView(TemplateView):
 
         data = []
 
-        for location in locations:
-            stations = Station.objects.filter(location=location)
-            locationData = Data.objects.filter(
-                station__in=stations, measurement__name=selectedMeasure.name,  time__gte=start.date(), time__lte=end.date())
-            if locationData.count() <= 0:
-                continue
-            minVal = locationData.aggregate(
-                Min('value'))['value__min']
-            maxVal = locationData.aggregate(
-                Max('value'))['value__max']
-            avgVal = locationData.aggregate(
-                Avg('value'))['value__avg']
-            data.append({
-                'name': f'{location.city.name}, {location.state.name}, {location.country.name}',
-                'lat': location.lat,
-                'lng': location.lng,
-                'population': stations.count(),
-                'min': minVal if minVal != None else 0,
-                'max': maxVal if maxVal != None else 0,
-                'avg': round(avgVal if avgVal != None else 0, 2),
-            })
+        if selectedMeasure == 'all': # new
+            start = datetime.min
+            end = datetime.now()    
+            for measureAll in measurements:
+                for location in locations:
+                    stations = Station.objects.filter(location=location)
+                    locationData = Data.objects.filter(
+                        station__in=stations, measurement__name=measureAll.name,  time__gte=start.date(), time__lte=end.date())
+                    if locationData.count() <= 0:
+                        continue
+                    minVal = locationData.aggregate(
+                        Min('value'))['value__min']
+                    maxVal = locationData.aggregate(
+                        Max('value'))['value__max']
+                    avgVal = locationData.aggregate(
+                        Avg('value'))['value__avg']
+                    data.append({
+                        'measure': measureAll.name, # new
+                        'name': f'{location.city.name}, {location.state.name}, {location.country.name}',
+                        'lat': location.lat,
+                        'lng': location.lng,
+                        'population': stations.count(),
+                        'min': minVal if minVal != None else 0,
+                        'max': maxVal if maxVal != None else 0,
+                        'avg': round(avgVal if avgVal != None else 0, 2),
+                    })
+        else: #medida seleccionada
+            for location in locations:
+                stations = Station.objects.filter(location=location)
+                locationData = Data.objects.filter(
+                    station__in=stations, measurement__name=selectedMeasure.name,  time__gte=start.date(), time__lte=end.date())
+                if locationData.count() <= 0:
+                    continue
+                minVal = locationData.aggregate(
+                    Min('value'))['value__min']
+                maxVal = locationData.aggregate(
+                    Max('value'))['value__max']
+                avgVal = locationData.aggregate(
+                    Avg('value'))['value__avg']
+                data.append({
+                    'measure': selectedMeasure.name, # new
+                    'name': f'{location.city.name}, {location.state.name}, {location.country.name}',
+                    'lat': location.lat,
+                    'lng': location.lng,
+                    'population': stations.count(),
+                    'min': minVal if minVal != None else 0,
+                    'max': maxVal if maxVal != None else 0,
+                    'avg': round(avgVal if avgVal != None else 0, 2),
+                })
 
         startFormatted = start.strftime("%d/%m/%Y") if start != None else " "
         endFormatted = end.strftime("%d/%m/%Y") if end != None else " "
@@ -486,6 +517,8 @@ class RemaView(TemplateView):
         context['start'] = startFormatted
         context['end'] = endFormatted
         context['data'] = data
+
+        print("CONTEXT: ", context)
 
         return context
 
@@ -525,7 +558,10 @@ def get_map_json(request, **kwargs):
     measurements = Measurement.objects.all()
 
     if measureParam != None:
-        selectedMeasure = Measurement.objects.filter(name=measureParam)[0]
+        if measureParam == 'all':  # new
+                selectedMeasure = 'all' # new
+        else: # new
+            selectedMeasure = Measurement.objects.filter(name=measureParam)[0]
     elif measurements.count() > 0:
         selectedMeasure = measurements[0]
 
@@ -553,27 +589,55 @@ def get_map_json(request, **kwargs):
 
     data = []
 
-    for location in locations:
-        stations = Station.objects.filter(location=location)
-        locationData = Data.objects.filter(
-            station__in=stations, measurement__name=selectedMeasure.name,  time__gte=start.date(), time__lte=end.date())
-        if locationData.count() <= 0:
-            continue
-        minVal = locationData.aggregate(
-            Min('value'))['value__min']
-        maxVal = locationData.aggregate(
-            Max('value'))['value__max']
-        avgVal = locationData.aggregate(
-            Avg('value'))['value__avg']
-        data.append({
-            'name': f'{location.city.name}, {location.state.name}, {location.country.name}',
-            'lat': location.lat,
-            'lng': location.lng,
-            'population': stations.count(),
-            'min': minVal if minVal != None else 0,
-            'max': maxVal if maxVal != None else 0,
-            'avg': round(avgVal if avgVal != None else 0, 2),
-        })
+    if selectedMeasure == 'all': # new
+        start = datetime.min
+        end = datetime.now()
+        for measureAll in measurements:
+            for location in locations:
+                stations = Station.objects.filter(location=location)
+                locationData = Data.objects.filter(
+                    station__in=stations, measurement__name=measureAll.name,  time__gte=start.date(), time__lte=end.date())
+                if locationData.count() <= 0:
+                    continue
+                minVal = locationData.aggregate(
+                    Min('value'))['value__min']
+                maxVal = locationData.aggregate(
+                    Max('value'))['value__max']
+                avgVal = locationData.aggregate(
+                    Avg('value'))['value__avg']
+                data.append({
+                    'measure': measureAll.name, # new
+                    'name': f'{location.city.name}, {location.state.name}, {location.country.name}',
+                    'lat': location.lat,
+                    'lng': location.lng,
+                    'population': stations.count(),
+                    'min': minVal if minVal != None else 0,
+                    'max': maxVal if maxVal != None else 0,
+                    'avg': round(avgVal if avgVal != None else 0, 2),
+                })
+    else: #medida seleccionada
+        for location in locations:
+                stations = Station.objects.filter(location=location)
+                locationData = Data.objects.filter(
+                    station__in=stations, measurement__name=selectedMeasure.name,  time__gte=start.date(), time__lte=end.date())
+                if locationData.count() <= 0:
+                    continue
+                minVal = locationData.aggregate(
+                    Min('value'))['value__min']
+                maxVal = locationData.aggregate(
+                    Max('value'))['value__max']
+                avgVal = locationData.aggregate(
+                    Avg('value'))['value__avg']
+                data.append({
+                    'measure': selectedMeasure.name, # new
+                    'name': f'{location.city.name}, {location.state.name}, {location.country.name}',
+                    'lat': location.lat,
+                    'lng': location.lng,
+                    'population': stations.count(),
+                    'min': minVal if minVal != None else 0,
+                    'max': maxVal if maxVal != None else 0,
+                    'avg': round(avgVal if avgVal != None else 0, 2),
+                })    
 
     startFormatted = start.strftime("%d/%m/%Y") if start != None else " "
     endFormatted = end.strftime("%d/%m/%Y") if end != None else " "
